@@ -4,9 +4,9 @@ import { z } from "zod";
 
 export const env = createEnv({
   server: {
-    DATABASE_URL: z.string().url(),
+    DATABASE_URL: z.url(),
     MAILERLITE_API_KEY: z.string().min(1),
-    MAILERLITE_API_BASE: z.string().url().default("https://connect.mailerlite.com/api"),
+    MAILERLITE_API_BASE: z.url().default("https://connect.mailerlite.com/api"),
   },
   client: {
     // tu nic wrażliwego
