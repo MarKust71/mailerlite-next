@@ -119,6 +119,7 @@ export default function SubscribersPage() {
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Subskrybenci</h1>
+
         <div className="flex items-center gap-2">
           <Input
             value={filters.q}
@@ -126,29 +127,39 @@ export default function SubscribersPage() {
             placeholder="Szukaj po e-mailu lub imieniu…"
             className="w-64"
           />
+
           <Button onClick={() => setAddSubscriberOpen(true)}>Dodaj</Button>
         </div>
       </div>
 
       {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
 
-      <div className="rounded-xl border">
-        <div className="grid grid-cols-3 px-4 py-2 text-sm font-medium">
-          <div>E-mail</div>
-          <div>Grupy</div>
-          <div>Utworzono</div>
-        </div>
-        <div className="divide-y">
-          {data?.items.map((s) => (
-            <div key={s.id} className="grid grid-cols-3 px-4 py-3 text-sm">
-              <div className="font-medium">{s.email}</div>
-              <div className="text-muted-foreground">{s.groups.length}</div>
-              <div className="text-muted-foreground">{new Date(s.createdAt).toLocaleString()}</div>
-            </div>
-          ))}
-          {data && data.items.length === 0 && (
-            <div className="px-4 py-6 text-sm text-muted-foreground">Brak wyników.</div>
-          )}
+      <div className="rounded-xl border overflow-x-auto">
+        <div
+          className="grid text-sm divide-y"
+          style={{ gridTemplateColumns: 'max-content 1fr 1fr 1fr' }}
+        >
+          {/* Nagłówek jako wiersz subgrid */}
+          <div className="grid grid-cols-subgrid col-span-full gap-x-4">
+            <div className="px-4 py-2 font-medium whitespace-nowrap">Status</div>
+            <div className="px-4 py-2 font-medium">E-mail</div>
+            <div className="px-4 py-2 font-medium">Grupy</div>
+            <div className="px-4 py-2 font-medium">Utworzono</div>
+          </div>
+
+          {/*Lista wierszy z divide-y*/}
+          <div className="divide-y col-span-full grid grid-cols-subgrid">
+            {data?.items.map((s) => (
+              <div key={s.id} className="grid grid-cols-subgrid col-span-full gap-x-4">
+                <div className="px-4 py-2 text-muted-foreground whitespace-nowrap">{s.status}</div>
+                <div className="px-4 py-2 font-medium">{s.email}</div>
+                <div className="px-4 py-2 text-muted-foreground">{s.groups.length}</div>
+                <div className="px-4 py-2 text-muted-foreground">
+                  {new Date(s.createdAt).toLocaleString()}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -156,6 +167,7 @@ export default function SubscribersPage() {
         <div className="text-sm text-muted-foreground">
           Razem: {totalItems} • Strona {page} / {totalPages}
         </div>
+
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -164,6 +176,7 @@ export default function SubscribersPage() {
           >
             Poprzednia
           </Button>
+
           <Button
             variant="outline"
             onClick={() => setPage(Math.min(totalPages, page + 1))}
@@ -173,7 +186,9 @@ export default function SubscribersPage() {
           </Button>
         </div>
       </div>
+
       <SyncSubscribersButton />
+
       <SyncGroupsButton includeMembers className={'ml-2'} />
     </div>
   )
