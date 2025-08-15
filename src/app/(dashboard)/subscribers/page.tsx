@@ -161,7 +161,7 @@ export default function SubscribersPage() {
                   {s.fields.find((f) => f.customField.key === 'last_name')?.value}
                 </div>
                 <div className="px-4 py-2 text-muted-foreground">{s.groups.length}</div>
-                <div className="px-4 py-2 text-muted-foreground">
+                <div className="px-4 py-2 text-muted-foreground tabular-nums">
                   {new Date(s.createdAt).toLocaleString()}
                 </div>
               </div>

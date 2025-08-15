@@ -39,7 +39,7 @@ export const useSubscribersTable = create<TableState>()(
     devtools(
       subscribeWithSelector((set) => ({
         page: 1,
-        pageSize: 15,
+        pageSize: 25,
         sortBy: 'createdAt',
         sortDir: 'desc' as SortDir,
         selectedIds: new Set<string>(),
