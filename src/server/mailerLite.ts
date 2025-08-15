@@ -10,11 +10,12 @@ export const ml = ky.create({
     beforeRequest: [
       (req) => {
         req.headers.set("Authorization", `Bearer ${env.MAILERLITE_API_KEY}`);
-        req.headers.set("Content-Type", "application/json");
         req.headers.set("Accept", "application/json");
+        if (req.method !== "GET") {
+          req.headers.set("Content-Type", "application/json");
+        }
       },
     ],
-  },
-  retry: { limit: 2, methods: ["get", "post", "put", "patch"] },
+  },  retry: { limit: 2, methods: ["get", "post", "put", "patch"] },
   timeout: 15_000,
 });
