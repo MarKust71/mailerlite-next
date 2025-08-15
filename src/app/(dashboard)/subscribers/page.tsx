@@ -120,7 +120,7 @@ export default function SubscribersPage() {
       <div className="rounded-xl border overflow-x-auto max-h-[80vh] overflow-auto">
         <div
           className="grid text-sm divide-y"
-          style={{ gridTemplateColumns: 'max-content max-content 1fr 1fr 1fr 1fr' }}
+          style={{ gridTemplateColumns: 'max-content max-content max-content max-content 1fr' }}
         >
           {/* STICKY: pasek z tytułem + filtrem + przyciskiem oraz nagłówkiem tabeli */}
           <div className="sticky top-0 z-20 grid grid-cols-subgrid col-span-full bg-background/95 supports-[backdrop-filter]:bg-background/75 backdrop-blur border-b">
@@ -151,8 +151,7 @@ export default function SubscribersPage() {
               <div className="px-4 py-2 font-medium whitespace-nowrap">E-mail</div>
               <div className="px-4 py-2 font-medium">Imię</div>
               <div className="px-4 py-2 font-medium">Nazwisko</div>
-              <div className="px-4 py-2 font-medium">Grupy</div>
-              <div className="px-4 py-2 font-medium">Utworzono</div>
+              <div className="px-4 py-2 font-medium">Temat</div>
             </div>
           </div>
 
@@ -166,9 +165,13 @@ export default function SubscribersPage() {
                 <div className="px-4 py-2 font-medium">
                   {s.fields.find((f) => f.customField.key === 'last_name')?.value}
                 </div>
-                <div className="px-4 py-2 text-muted-foreground">{s.groups.length}</div>
-                <div className="px-4 py-2 text-muted-foreground tabular-nums">
-                  {new Date(s.createdAt).toLocaleString()}
+                <div
+                  className="px-4 py-2 font-medium truncate"
+                  title={
+                    s.fields.find((f) => f.customField.key === 'received_email_subject')?.value
+                  }
+                >
+                  {s.fields.find((f) => f.customField.key === 'received_email_subject')?.value}
                 </div>
               </div>
             ))}
