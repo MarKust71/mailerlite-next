@@ -1,40 +1,40 @@
 // src/app/(dashboard)/subscribers/page.tsx
-"use client";
+'use client'
 
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from "@tanstack/react-query";
-import { useMemo } from "react";
-import type {
-  Subscriber,
-  SubscriberGroup,
-  SubscriberFieldValue,
-  CustomField,
-} from "@prisma/client";
-import { useSubscribersTable } from "@/stores/subscribers";
-import { useUIStore } from "@/stores/ui";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { useShallow } from "zustand/react/shallow";
+import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query'
+import { useMemo } from 'react'
+import { useShallow } from 'zustand/react/shallow'
+
+import { SyncGroupsButton } from '@/components/sync-groups-button'
+import { SyncSubscribersButton } from '@/components/sync-subscribers-button'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { useSubscribersTable } from '@/stores/subscribers'
+import { useUIStore } from '@/stores/ui'
+
+import type { Subscriber, SubscriberGroup, SubscriberFieldValue, CustomField } from '@prisma/client'
 
 /** Typ encji z relacjami, tak jak zwraca API */
 type SubscriberWithRelations = Subscriber & {
-  groups: SubscriberGroup[];
-  fields: (SubscriberFieldValue & { customField: CustomField })[];
-};
+  groups: SubscriberGroup[]
+  fields: (SubscriberFieldValue & { customField: CustomField })[]
+}
 
 /** Kształt odpowiedzi /api/subscribers */
-type SubscribersResponse = { items: SubscriberWithRelations[]; total: number };
+type SubscribersResponse = { items: SubscriberWithRelations[]; total: number }
 
 /** Minimalny helper do budowania query string */
 function buildQueryString(params: Record<string, string | number | null | undefined>) {
-  const q = new URLSearchParams();
+  const q = new URLSearchParams()
   for (const [k, v] of Object.entries(params)) {
-    if (v !== null && v !== undefined && v !== "") q.set(k, String(v));
+    if (v !== null && v !== undefined && v !== '') q.set(k, String(v))
   }
-  return q.toString();
+
+  return q.toString()
 }
 
 export default function SubscribersPage() {
-  const queryClient = useQueryClient();
+  const queryClient = useQueryClient()
   const selector = (s: ReturnType<typeof useSubscribersTable.getState>) => ({
     page: s.page,
     pageSize: s.pageSize,
@@ -42,20 +42,30 @@ export default function SubscribersPage() {
     sortDir: s.sortDir,
     filters: s.filters,
     setQuery: s.setQuery,
-    setPage: s.setPage,
-  });
+    setPage: s.setPage
+  })
 
   // Zustand: parametry tabeli/filtrów
-  const { page, pageSize, sortBy, sortDir, filters, setQuery, setPage } = useSubscribersTable(useShallow(selector));
+  const { page, pageSize, sortBy, sortDir, filters, setQuery, setPage } = useSubscribersTable(
+    useShallow(selector)
+  )
 
   const queryKey = useMemo(
     () =>
       [
-        "subscribers",
-        { q: filters.q, groupId: filters.groupId, status: filters.status, page, pageSize, sortBy, sortDir },
+        'subscribers',
+        {
+          q: filters.q,
+          groupId: filters.groupId,
+          status: filters.status,
+          page,
+          pageSize,
+          sortBy,
+          sortDir
+        }
       ] as const,
     [filters.q, filters.groupId, filters.status, page, pageSize, sortBy, sortDir]
-  );
+  )
 
   const { data, isLoading, isFetching, error } = useQuery<SubscribersResponse>({
     queryKey,
@@ -67,41 +77,43 @@ export default function SubscribersPage() {
         sortDir,
         q: filters.q,
         groupId: filters.groupId,
-        status: filters.status === "any" ? null : filters.status,
-      });
-      const res = await fetch(`/api/subscribers?${qs}`, { cache: "no-store" });
-      if (!res.ok) throw new Error("Failed to fetch subscribers");
-      return (await res.json()) as SubscribersResponse;
+        status: filters.status === 'any' ? null : filters.status
+      })
+      const res = await fetch(`/api/subscribers?${qs}`, { cache: 'no-store' })
+      if (!res.ok) throw new Error('Failed to fetch subscribers')
+
+      return (await res.json()) as SubscribersResponse
     },
     placeholderData: keepPreviousData,
-    staleTime: 5_000,
-  });
+    staleTime: 5_000
+  })
 
   // (opcjonalnie) mutacja tworzenia — pokazana typowo, bez użycia poniżej
   const createMutation = useMutation({
     mutationFn: async (payload: { email: string; name?: string }) => {
-      const res = await fetch("/api/subscribers", {
-        method: "POST",
+      const res = await fetch('/api/subscribers', {
+        method: 'POST',
         body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
-      });
-      if (!res.ok) throw new Error("Create failed");
-      return (await res.json()) as SubscriberWithRelations;
+        headers: { 'Content-Type': 'application/json' }
+      })
+      if (!res.ok) throw new Error('Create failed')
+
+      return (await res.json()) as SubscriberWithRelations
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["subscribers"] });
-    },
-  });
+      queryClient.invalidateQueries({ queryKey: ['subscribers'] })
+    }
+  })
 
   const { setAddSubscriberOpen } = useUIStore(
     useShallow((s) => ({ setAddSubscriberOpen: s.setAddSubscriberOpen }))
-  );
+  )
 
-  const totalItems = data?.total ?? 0;
-  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const totalItems = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize))
 
-  if (isLoading && !data) return <div className="p-6">Ładowanie…</div>;
-  if (error) return <div className="p-6 text-red-600">Błąd pobierania</div>;
+  if (isLoading && !data) return <div className="p-6">Ładowanie…</div>
+  if (error) return <div className="p-6 text-red-600">Błąd pobierania</div>
 
   return (
     <div className="p-6 space-y-4">
@@ -131,9 +143,7 @@ export default function SubscribersPage() {
             <div key={s.id} className="grid grid-cols-3 px-4 py-3 text-sm">
               <div className="font-medium">{s.email}</div>
               <div className="text-muted-foreground">{s.groups.length}</div>
-              <div className="text-muted-foreground">
-                {new Date(s.createdAt).toLocaleString()}
-              </div>
+              <div className="text-muted-foreground">{new Date(s.createdAt).toLocaleString()}</div>
             </div>
           ))}
           {data && data.items.length === 0 && (
@@ -163,6 +173,8 @@ export default function SubscribersPage() {
           </Button>
         </div>
       </div>
+      <SyncSubscribersButton />
+      <SyncGroupsButton includeMembers className={'ml-2'} />
     </div>
-  );
+  )
 }

@@ -1,16 +1,16 @@
 // src/stores/ui.ts
-"use client";
+'use client'
 
-import { create } from "zustand";
-import { devtools } from "zustand/middleware";
+import { create } from 'zustand'
+import { devtools } from 'zustand/middleware'
 
 type UIState = {
-  addSubscriberOpen: boolean;
-  setAddSubscriberOpen: (open: boolean) => void;
+  addSubscriberOpen: boolean
+  setAddSubscriberOpen: (open: boolean) => void
 
-  sidebarOpen: boolean;
-  setSidebarOpen: (open: boolean) => void;
-};
+  sidebarOpen: boolean
+  setSidebarOpen: (open: boolean) => void
+}
 
 export const useUIStore = create<UIState>()(
   devtools(
@@ -19,8 +19,8 @@ export const useUIStore = create<UIState>()(
       setAddSubscriberOpen: (open) => set({ addSubscriberOpen: open }),
 
       sidebarOpen: false,
-      setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      setSidebarOpen: (open) => set({ sidebarOpen: open })
     }),
-    { name: "ui-store" }
+    { name: 'ui-store' }
   )
-);
+)
