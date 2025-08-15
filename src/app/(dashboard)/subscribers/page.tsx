@@ -117,37 +117,43 @@ export default function SubscribersPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-row gap-2 items-center">
-          <h1 className="text-xl font-semibold">Subskrybenci</h1>
-          {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Input
-            value={filters.q}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-            placeholder="Szukaj po e-mailu lub imieniu…"
-            className="w-64"
-          />
-
-          <Button onClick={() => setAddSubscriberOpen(true)}>Dodaj</Button>
-        </div>
-      </div>
-
-      <div className="rounded-xl border overflow-x-auto">
+      <div className="rounded-xl border overflow-x-auto max-h-[80vh] overflow-auto">
         <div
           className="grid text-sm divide-y"
           style={{ gridTemplateColumns: 'max-content max-content 1fr 1fr 1fr 1fr' }}
         >
-          {/* Nagłówek jako wiersz subgrid */}
-          <div className="grid grid-cols-subgrid col-span-full gap-x-4">
-            <div className="px-4 py-2 font-medium whitespace-nowrap">Status</div>
-            <div className="px-4 py-2 font-medium whitespace-nowrap">E-mail</div>
-            <div className="px-4 py-2 font-medium">Imię</div>
-            <div className="px-4 py-2 font-medium">Nazwisko</div>
-            <div className="px-4 py-2 font-medium">Grupy</div>
-            <div className="px-4 py-2 font-medium">Utworzono</div>
+          {/* STICKY: pasek z tytułem + filtrem + przyciskiem oraz nagłówkiem tabeli */}
+          <div className="sticky top-0 z-20 grid grid-cols-subgrid col-span-full bg-background/95 supports-[backdrop-filter]:bg-background/75 backdrop-blur border-b">
+            {/* Pasek narzędzi */}
+            <div className="col-span-full divide-y">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="flex flex-row gap-2 items-center">
+                  <h1 className="text-xl font-semibold">Subskrybenci</h1>
+                  {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={filters.q}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+                    placeholder="Szukaj po e-mailu lub imieniu…"
+                    className="w-64"
+                  />
+
+                  <Button onClick={() => setAddSubscriberOpen(true)}>Dodaj</Button>
+                </div>
+              </div>
+            </div>
+
+            {/* Nagłówek jako wiersz subgrid */}
+            <div className="grid grid-cols-subgrid col-span-full gap-x-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="px-4 py-2 font-medium whitespace-nowrap">Status</div>
+              <div className="px-4 py-2 font-medium whitespace-nowrap">E-mail</div>
+              <div className="px-4 py-2 font-medium">Imię</div>
+              <div className="px-4 py-2 font-medium">Nazwisko</div>
+              <div className="px-4 py-2 font-medium">Grupy</div>
+              <div className="px-4 py-2 font-medium">Utworzono</div>
+            </div>
           </div>
 
           {/*Lista wierszy z divide-y*/}
