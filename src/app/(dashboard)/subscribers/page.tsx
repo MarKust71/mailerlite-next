@@ -118,7 +118,10 @@ export default function SubscribersPage() {
   return (
     <div className="p-6 space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Subskrybenci</h1>
+        <div className="flex flex-row gap-2 items-center">
+          <h1 className="text-xl font-semibold">Subskrybenci</h1>
+          {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
+        </div>
 
         <div className="flex items-center gap-2">
           <Input
@@ -132,17 +135,17 @@ export default function SubscribersPage() {
         </div>
       </div>
 
-      {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
-
       <div className="rounded-xl border overflow-x-auto">
         <div
           className="grid text-sm divide-y"
-          style={{ gridTemplateColumns: 'max-content 1fr 1fr 1fr' }}
+          style={{ gridTemplateColumns: 'max-content max-content 1fr 1fr 1fr 1fr' }}
         >
           {/* Nagłówek jako wiersz subgrid */}
           <div className="grid grid-cols-subgrid col-span-full gap-x-4">
             <div className="px-4 py-2 font-medium whitespace-nowrap">Status</div>
-            <div className="px-4 py-2 font-medium">E-mail</div>
+            <div className="px-4 py-2 font-medium whitespace-nowrap">E-mail</div>
+            <div className="px-4 py-2 font-medium">Imię</div>
+            <div className="px-4 py-2 font-medium">Nazwisko</div>
             <div className="px-4 py-2 font-medium">Grupy</div>
             <div className="px-4 py-2 font-medium">Utworzono</div>
           </div>
@@ -153,6 +156,10 @@ export default function SubscribersPage() {
               <div key={s.id} className="grid grid-cols-subgrid col-span-full gap-x-4">
                 <div className="px-4 py-2 text-muted-foreground whitespace-nowrap">{s.status}</div>
                 <div className="px-4 py-2 font-medium">{s.email}</div>
+                <div className="px-4 py-2 font-medium">{s.name}</div>
+                <div className="px-4 py-2 font-medium">
+                  {s.fields.find((f) => f.customField.key === 'last_name')?.value}
+                </div>
                 <div className="px-4 py-2 text-muted-foreground">{s.groups.length}</div>
                 <div className="px-4 py-2 text-muted-foreground">
                   {new Date(s.createdAt).toLocaleString()}
