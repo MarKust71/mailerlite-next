@@ -6,7 +6,9 @@ import { z } from 'zod'
 import { prisma } from '@/server/db'
 import { ml } from '@/server/mailerLite'
 
-import type { Prisma } from '@prisma/client' // ⬅️ DODAJ
+import { MLSubscriberCreate } from './subscribers.types' // ⬅️ DODAJ
+
+import type { Prisma } from '@prisma/client'
 
 const createSubscriberSchema = z.object({
   email: z.email(),
@@ -14,8 +16,6 @@ const createSubscriberSchema = z.object({
   fields: z.record(z.string(), z.string()).optional(),
   groupIds: z.array(z.string()).optional()
 })
-
-type MLSubscriberCreate = { id: string } // ⬅️ opcjonalnie: unikamy any przy .json
 
 export async function createSubscriberAction(input: unknown) {
   const parsed = createSubscriberSchema.parse(input)
@@ -37,7 +37,9 @@ export async function createSubscriberAction(input: unknown) {
 
     for (const [key, value] of Object.entries(fields)) {
       const cf = await tx.customField.findUnique({ where: { key } })
+
       if (!cf) continue
+
       await tx.subscriberFieldValue.upsert({
         where: { subscriberId_customFieldId: { subscriberId: sub.id, customFieldId: cf.id } },
         create: { subscriberId: sub.id, customFieldId: cf.id, value: value },

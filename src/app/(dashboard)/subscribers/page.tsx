@@ -9,29 +9,11 @@ import { SyncGroupsButton } from '@/components/sync-groups-button'
 import { SyncSubscribersButton } from '@/components/sync-subscribers-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { buildQueryString } from '@/helpers'
 import { useSubscribersTable } from '@/stores/subscribers'
 import { useUIStore } from '@/stores/ui'
 
-import type { Subscriber, SubscriberGroup, SubscriberFieldValue, CustomField } from '@prisma/client'
-
-/** Typ encji z relacjami, tak jak zwraca API */
-type SubscriberWithRelations = Subscriber & {
-  groups: SubscriberGroup[]
-  fields: (SubscriberFieldValue & { customField: CustomField })[]
-}
-
-/** Kształt odpowiedzi /api/subscribers */
-type SubscribersResponse = { items: SubscriberWithRelations[]; total: number }
-
-/** Minimalny helper do budowania query string */
-function buildQueryString(params: Record<string, string | number | null | undefined>) {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== null && v !== undefined && v !== '') q.set(k, String(v))
-  }
-
-  return q.toString()
-}
+import { SubscribersResponse, SubscriberWithRelations } from './page.types'
 
 export default function SubscribersPage() {
   const queryClient = useQueryClient()

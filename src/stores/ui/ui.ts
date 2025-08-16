@@ -4,13 +4,7 @@
 import { create } from 'zustand'
 import { devtools } from 'zustand/middleware'
 
-type UIState = {
-  addSubscriberOpen: boolean
-  setAddSubscriberOpen: (open: boolean) => void
-
-  sidebarOpen: boolean
-  setSidebarOpen: (open: boolean) => void
-}
+import { UIState } from './ui.types'
 
 export const useUIStore = create<UIState>()(
   devtools(
