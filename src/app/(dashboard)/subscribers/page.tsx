@@ -9,29 +9,11 @@ import { SyncGroupsButton } from '@/components/sync-groups-button'
 import { SyncSubscribersButton } from '@/components/sync-subscribers-button'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { buildQueryString } from '@/helpers'
 import { useSubscribersTable } from '@/stores/subscribers'
 import { useUIStore } from '@/stores/ui'
 
-import type { Subscriber, SubscriberGroup, SubscriberFieldValue, CustomField } from '@prisma/client'
-
-/** Typ encji z relacjami, tak jak zwraca API */
-type SubscriberWithRelations = Subscriber & {
-  groups: SubscriberGroup[]
-  fields: (SubscriberFieldValue & { customField: CustomField })[]
-}
-
-/** Kształt odpowiedzi /api/subscribers */
-type SubscribersResponse = { items: SubscriberWithRelations[]; total: number }
-
-/** Minimalny helper do budowania query string */
-function buildQueryString(params: Record<string, string | number | null | undefined>) {
-  const q = new URLSearchParams()
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== null && v !== undefined && v !== '') q.set(k, String(v))
-  }
-
-  return q.toString()
-}
+import { SubscribersResponse, SubscriberWithRelations } from './page.types'
 
 export default function SubscribersPage() {
   const queryClient = useQueryClient()
@@ -117,38 +99,65 @@ export default function SubscribersPage() {
 
   return (
     <div className="p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Subskrybenci</h1>
-        <div className="flex items-center gap-2">
-          <Input
-            value={filters.q}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
-            placeholder="Szukaj po e-mailu lub imieniu…"
-            className="w-64"
-          />
-          <Button onClick={() => setAddSubscriberOpen(true)}>Dodaj</Button>
-        </div>
-      </div>
+      <div className="rounded-xl border overflow-x-auto max-h-[80vh] overflow-auto">
+        <div
+          className="grid text-sm divide-y"
+          style={{ gridTemplateColumns: 'max-content max-content max-content max-content 1fr' }}
+        >
+          {/* STICKY: pasek z tytułem + filtrem + przyciskiem oraz nagłówkiem tabeli */}
+          <div className="sticky top-0 z-20 grid grid-cols-subgrid col-span-full bg-background/95 supports-[backdrop-filter]:bg-background/75 backdrop-blur border-b">
+            {/* Pasek narzędzi */}
+            <div className="col-span-full divide-y">
+              <div className="flex items-center justify-between gap-3 px-4 py-3">
+                <div className="flex flex-row gap-2 items-center">
+                  <h1 className="text-xl font-semibold">Subskrybenci</h1>
+                  {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
+                </div>
 
-      {isFetching && <div className="text-sm text-muted-foreground">Odświeżanie…</div>}
+                <div className="flex items-center gap-2">
+                  <Input
+                    value={filters.q}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setQuery(e.target.value)}
+                    placeholder="Szukaj po e-mailu lub imieniu…"
+                    className="w-64"
+                  />
 
-      <div className="rounded-xl border">
-        <div className="grid grid-cols-3 px-4 py-2 text-sm font-medium">
-          <div>E-mail</div>
-          <div>Grupy</div>
-          <div>Utworzono</div>
-        </div>
-        <div className="divide-y">
-          {data?.items.map((s) => (
-            <div key={s.id} className="grid grid-cols-3 px-4 py-3 text-sm">
-              <div className="font-medium">{s.email}</div>
-              <div className="text-muted-foreground">{s.groups.length}</div>
-              <div className="text-muted-foreground">{new Date(s.createdAt).toLocaleString()}</div>
+                  <Button onClick={() => setAddSubscriberOpen(true)}>Dodaj</Button>
+                </div>
+              </div>
             </div>
-          ))}
-          {data && data.items.length === 0 && (
-            <div className="px-4 py-6 text-sm text-muted-foreground">Brak wyników.</div>
-          )}
+
+            {/* Nagłówek jako wiersz subgrid */}
+            <div className="grid grid-cols-subgrid col-span-full gap-x-4 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              <div className="px-4 py-2 font-medium whitespace-nowrap">Status</div>
+              <div className="px-4 py-2 font-medium whitespace-nowrap">E-mail</div>
+              <div className="px-4 py-2 font-medium">Imię</div>
+              <div className="px-4 py-2 font-medium">Nazwisko</div>
+              <div className="px-4 py-2 font-medium">Temat</div>
+            </div>
+          </div>
+
+          {/*Lista wierszy z divide-y*/}
+          <div className="divide-y col-span-full grid grid-cols-subgrid">
+            {data?.items.map((s) => (
+              <div key={s.id} className="grid grid-cols-subgrid col-span-full gap-x-4">
+                <div className="px-4 py-2 text-muted-foreground whitespace-nowrap">{s.status}</div>
+                <div className="px-4 py-2 font-medium">{s.email}</div>
+                <div className="px-4 py-2 font-medium">{s.name}</div>
+                <div className="px-4 py-2 font-medium">
+                  {s.fields.find((f) => f.customField.key === 'last_name')?.value}
+                </div>
+                <div
+                  className="px-4 py-2 font-medium truncate"
+                  title={
+                    s.fields.find((f) => f.customField.key === 'received_email_subject')?.value
+                  }
+                >
+                  {s.fields.find((f) => f.customField.key === 'received_email_subject')?.value}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -156,6 +165,7 @@ export default function SubscribersPage() {
         <div className="text-sm text-muted-foreground">
           Razem: {totalItems} • Strona {page} / {totalPages}
         </div>
+
         <div className="flex gap-2">
           <Button
             variant="outline"
@@ -164,6 +174,7 @@ export default function SubscribersPage() {
           >
             Poprzednia
           </Button>
+
           <Button
             variant="outline"
             onClick={() => setPage(Math.min(totalPages, page + 1))}
@@ -173,7 +184,9 @@ export default function SubscribersPage() {
           </Button>
         </div>
       </div>
+
       <SyncSubscribersButton />
+
       <SyncGroupsButton includeMembers className={'ml-2'} />
     </div>
   )
