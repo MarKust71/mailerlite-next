@@ -9,6 +9,10 @@ export async function POST() {
   const limit = 100
   let cursor: string | undefined = undefined
   let imported = 0
+  let inactivated = 0
+
+  // Zestaw ID-ów ML widzianych w tym przebiegu
+  const seenIds = new Set<string>()
 
   // helper do pobrania strony: z cursor (jeśli jest) i limit
   async function fetchPage(c?: string) {
@@ -25,12 +29,15 @@ export async function POST() {
     while (true) {
       const { rows, next } = await fetchPage(cursor)
 
-      console.log({ rows: rows.length, next })
+      console.log({ imported: rows.length, next })
 
       if (!rows.length) break
 
       // krótkie transakcje — 1 subskrybent = 1 transakcja (unika P2028)
       for (const r of rows) {
+        // zapamiętujemy zdalne ID jako "widziane"
+        if (r.id) seenIds.add(r.id)
+
         await prisma.$transaction(
           async (tx) => {
             const name =
@@ -91,7 +98,33 @@ export async function POST() {
       cursor = next
     }
 
-    return NextResponse.json({ imported })
+    // --- POST-SYNC: oznacz jako inactive tych, których NIE było w remote ---
+
+    // 1) Pobierz lokalnych subów, którzy mają mailerLiteId (czyli pochodzą z ML)
+    const localWithMlId = await prisma.subscriber.findMany({
+      select: { id: true, mailerLiteId: true },
+      where: { mailerLiteId: { not: null } }
+    })
+
+    // 2) Wybierz tych, których mailerLiteId nie wystąpił w aktualnym przebiegu
+    const toDeactivateIds = localWithMlId
+      .filter((s) => s.mailerLiteId && !seenIds.has(s.mailerLiteId))
+      .map((s) => s.id)
+
+    // 3) Oznacz w partiach jako inactive (żeby nie tworzyć wielkich IN)
+    const chunkSize = 1000
+    for (let i = 0; i < toDeactivateIds.length; i += chunkSize) {
+      const batch = toDeactivateIds.slice(i, i + chunkSize)
+      if (batch.length) {
+        const res = await prisma.subscriber.updateMany({
+          where: { id: { in: batch } },
+          data: { status: 'inactive' }
+        })
+        inactivated += res.count
+      }
+    }
+
+    return NextResponse.json({ imported, inactivated })
   } catch (e: any) {
     // lepsza diagnostyka z ciałem odpowiedzi
     if (e.name === 'HTTPError' && e.response) {
