@@ -1,14 +1,10 @@
 // src/app/api/dev/import-subscribers/route.ts
 import { NextResponse } from 'next/server'
 
+import { fetchSubscribersPage } from '@/helpers/ml-subscribers/fetch-subscribers-page'
 import { prisma } from '@/server/db'
-import { mailerLite, sdkList } from '@/server/mailer-lite'
-import { SdkListResult } from '@/server/mailer-lite.types'
-
-import { SdkSubscriber } from './types'
 
 export async function POST() {
-  const limit = 100
   let cursor: string | undefined = undefined
   let imported = 0
   let inactivated = 0
@@ -16,16 +12,9 @@ export async function POST() {
   // Zestaw ID-ów ML widzianych w tym przebiegu
   const seenIds = new Set<string>()
 
-  async function fetchPage(c?: string) {
-    const resp = await mailerLite.subscribers.get({ limit, cursor: c })
-    const [rows, next]: SdkListResult<SdkSubscriber> = sdkList<SdkSubscriber>(resp)
-
-    return { rows, next }
-  }
-
   try {
     while (true) {
-      const { rows, next } = await fetchPage(cursor)
+      const { rows, next } = await fetchSubscribersPage(cursor)
 
       console.log({ imported: rows.length, next })
 
