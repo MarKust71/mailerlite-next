@@ -28,7 +28,6 @@ export async function POST() {
         await prisma.$transaction(
           async (tx) => {
             const name =
-              (r as any).name ??
               (r.fields?.name as string | undefined) ??
               (r.fields?.first_name as string | undefined) ??
               null
@@ -111,12 +110,14 @@ export async function POST() {
     }
 
     return NextResponse.json({ imported, inactivated })
-  } catch (e: any) {
+  } catch (e: unknown) {
     // lepsza diagnostyka z ciałem odpowiedzi
     console.error('MailerLite SDK error', e)
 
+    const message = e instanceof Error ? e.message : typeof e === 'string' ? e : 'Unknown error'
+
     return NextResponse.json(
-      { error: 'MailerLite error', detail: e?.message ?? 'Unknown error' },
+      { error: 'MailerLite error', detail: message ?? 'Unknown error' },
       { status: 500 }
     )
   }

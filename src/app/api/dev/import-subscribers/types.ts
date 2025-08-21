@@ -1,9 +1,6 @@
 // src/app/api/dev/import-subscribers/types.ts
-export type SdkSubscriber = {
-  id?: string
-  email: string
-  status?: string
+import { SubscriberObject } from '@mailerlite/mailerlite-nodejs'
+
+export type SdkSubscriber = Omit<SubscriberObject, 'fields'> & {
   fields?: Record<string, unknown>
-  created_at?: string
-  updated_at?: string
 }
