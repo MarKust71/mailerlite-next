@@ -1,3 +1,4 @@
+// src/components/sync-groups-button/sync-groups-button.tsx
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'

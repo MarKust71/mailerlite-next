@@ -1,3 +1,4 @@
+// src/components/sync-subscribers-button/sync-subscribers-button.tsx
 'use client'
 
 import { useMutation, useQueryClient } from '@tanstack/react-query'
