@@ -13,9 +13,11 @@ export async function importGroupMembersByCursor(
   let linked = 0
 
   async function fetchPage(c?: string): Promise<PageResult> {
-    const resp =
-      (await (mailerLite as any).groups.getSubscribers?.(remoteGroupId, { limit, cursor: c })) ??
-      (await (mailerLite as any).groups.subscribers?.(remoteGroupId, { limit, cursor: c }))
+    if (typeof mailerLite.groups?.getSubscribers !== 'function') {
+      throw new Error('MailerLite client does not expose groups.getSubscribers')
+    }
+
+    const resp = await mailerLite.groups.getSubscribers(remoteGroupId, { limit, cursor: c })
     const [rows, next] = sdkList<GroupSubscriber>(resp)
 
     return { rows, next }
