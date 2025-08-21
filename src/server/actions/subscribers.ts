@@ -4,9 +4,7 @@
 import { z } from 'zod'
 
 import { prisma } from '@/server/db'
-import { ml } from '@/server/mailer-lite'
-
-import { MLSubscriberCreate } from './subscribers.types' // ⬅️ DODAJ
+import { mailerLite } from '@/server/mailer-lite'
 
 import type { Prisma } from '@prisma/client'
 
@@ -21,18 +19,20 @@ export async function createSubscriberAction(input: unknown) {
   const parsed = createSubscriberSchema.parse(input)
   const { email, name, groupIds = [] } = parsed
   const fields = parsed.fields ?? {}
+  const body = { email, fields, groups: groupIds.length ? groupIds : undefined }
 
-  const body = { email, fields }
-
-  // ⬇️ zero 'any'
-  const res = await ml.post('subscribers', { json: body }).json<MLSubscriberCreate>()
+  // SDK: upsert (POST /subscribers) → { data: Subscriber }
+  // const { data: created } = await mailerLite.subscribers.createOrUpdate(body)
+  const {
+    data: { data: created }
+  } = await mailerLite.subscribers.createOrUpdate(body)
 
   // ⬇️ KLUCZOWE: typ parametru transakcji
   return prisma.$transaction(async (tx: Prisma.TransactionClient) => {
     const sub = await tx.subscriber.upsert({
       where: { email },
-      create: { email, name: name ?? null, mailerLiteId: res.id, status: 'active' },
-      update: { name: name ?? null, mailerLiteId: res.id }
+      create: { email, name: name ?? null, mailerLiteId: created.id, status: 'active' },
+      update: { name: name ?? null, mailerLiteId: created.id }
     })
 
     for (const [key, value] of Object.entries(fields)) {
