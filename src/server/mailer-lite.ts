@@ -1,7 +1,7 @@
 // src/server/mailer-lite.ts
 import MailerLite from '@mailerlite/mailerlite-nodejs'
 
-import { AnyAxios, ListShape, SdkListResult } from './mailer-lite.types'
+import { ListShape, SdkListResponse, SdkListResult } from './mailer-lite.types'
 
 export const mailerLite = new MailerLite({
   api_key: process.env.MAILERLITE_API_KEY!
@@ -14,7 +14,7 @@ function isListShape<T>(x: unknown): x is ListShape<T> {
 // Zwraca [rows, next_cursor]
 export function sdkList<T>(resp: unknown): SdkListResult<T> {
   // przypadek: AxiosResponse<{ data: T[]; meta? }>
-  const maybeAxios = resp as AnyAxios | undefined
+  const maybeAxios = resp as SdkListResponse<T> | undefined
   const data = maybeAxios?.data ?? resp
 
   let payload: ListShape<T> | T[] | undefined
