@@ -12,17 +12,31 @@ function isListShape<T>(x: unknown): x is ListShape<T> {
 }
 
 // Zwraca [rows, next_cursor]
-export function sdkList<T>(resp: unknown): SdkListResult<T> {
-  // przypadek: AxiosResponse<{ data: T[]; meta? }>
-  const maybeAxios = resp as SdkListResponse<T> | undefined
-  const data = maybeAxios?.data ?? resp
-
+export function sdkList<T>(resp: SdkListResponse<T> | ListShape<T> | T[]): SdkListResult<T> {
+  // Accept both Axios-style responses and plain payloads from the SDK
+  // 1) AxiosResponse<{ data?: T[]; meta?: { next_cursor?: string } }>
+  // 2) AxiosResponse<T[]>
+  // 3) Plain { data, meta } object
+  // 4) Plain T[]
   let payload: ListShape<T> | T[] | undefined
 
-  if (Array.isArray(data)) {
-    payload = data
-  } else if (isListShape<T>(data)) {
-    payload = data
+  // (1) / (2): Axios-like
+  const maybeAxios = resp as SdkListResponse<T>
+  if (maybeAxios && typeof maybeAxios === 'object' && 'data' in maybeAxios) {
+    const d = maybeAxios.data
+    if (Array.isArray(d)) {
+      payload = d as T[]
+    } else if (isListShape<T>(d)) {
+      payload = d as ListShape<T>
+    } else {
+      payload = undefined
+    }
+  } else if (Array.isArray(resp)) {
+    // (4) plain array
+    payload = resp as T[]
+  } else if (isListShape<T>(resp)) {
+    // (3) plain list shape
+    payload = resp as ListShape<T>
   } else {
     payload = undefined
   }
@@ -31,8 +45,10 @@ export function sdkList<T>(resp: unknown): SdkListResult<T> {
     return [payload, undefined]
   }
 
-  const rows: T[] = Array.isArray(payload?.data) ? payload!.data : []
-  const next = payload?.meta?.next_cursor
+  const rows: T[] = Array.isArray((payload as ListShape<T>)?.data)
+    ? (payload as ListShape<T>).data!
+    : []
+  const next = (payload as ListShape<T>)?.meta?.next_cursor
 
   return [rows, next]
 }

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 import { prisma } from '@/server/db'
 
+import type { Prisma } from '@prisma/client'
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url)
   const page = Number(searchParams.get('page') ?? '1')
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   const groupId = searchParams.get('groupId')
   const status = searchParams.get('status') // active | unsubscribed | null
 
-  const where: any = {}
+  const where: Prisma.SubscriberWhereInput = {}
   if (q)
     where.OR = [
       { email: { contains: q, mode: 'insensitive' } },
