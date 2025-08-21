@@ -1,12 +1,12 @@
-import { ml } from '@/server/mailerLite'
+import { mailerLite, sdkList } from '@/server/mailer-lite'
 
 import { MLGroup } from './fetch-groups-page.types'
 
 export async function fetchGroupsPage(page: number, limit: number) {
-  // MailerLite: paginacja dla grup = page + limit
-  const resp = await ml
-    .get('groups', { searchParams: { page, limit } })
-    .json<{ data?: MLGroup[] } | MLGroup[]>()
+  const resp =
+    (await (mailerLite as any).groups.list?.({ page, limit })) ??
+    (await (mailerLite as any).groups.get?.({ page, limit }))
+  const [rows] = sdkList<MLGroup>(resp)
 
-  return Array.isArray(resp) ? resp : (resp.data ?? [])
+  return rows
 }

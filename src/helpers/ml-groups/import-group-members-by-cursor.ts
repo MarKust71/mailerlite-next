@@ -1,38 +1,51 @@
+// src/helpers/ml-groups/import-group-members-by-cursor.ts
 import { prisma } from '@/server/db'
+import { mailerLite, sdkList } from '@/server/mailer-lite'
 
-import { fetchGroupMembersCursor } from './fetch-group-members-cursor'
+import { GroupSubscriber, PageResult } from './import-group-members-by-cursor.types'
 
-// --- import powiązań grupy -> subskrybenci (SubscriberGroup) ---
 export async function importGroupMembersByCursor(
   localGroupId: string,
-  mlGroupId: string,
-  limit = 100
+  remoteGroupId: string,
+  limit: number
 ) {
   let cursor: string | undefined = undefined
   let linked = 0
 
+  async function fetchPage(c?: string): Promise<PageResult> {
+    const resp =
+      (await (mailerLite as any).groups.getSubscribers?.(remoteGroupId, { limit, cursor: c })) ??
+      (await (mailerLite as any).groups.subscribers?.(remoteGroupId, { limit, cursor: c }))
+    const [rows, next] = sdkList<GroupSubscriber>(resp)
+
+    return { rows, next }
+  }
+
   while (true) {
-    const { rows, next } = await fetchGroupMembersCursor(mlGroupId, cursor, limit)
+    // SDK: subskrybenci należący do grupy — cursor/limit
+    const { rows, next } = await fetchPage(cursor)
 
-    console.log({ group: mlGroupId, members: rows.length, cursor })
+    console.log({ imported: rows.length, next })
 
-    if (!rows.length) break
+    if (!next) break
 
-    for (const m of rows) {
-      const sub =
-        (await prisma.subscriber.findUnique({ where: { mailerLiteId: m.id } })) ??
-        (await prisma.subscriber.findUnique({ where: { email: m.email } }))
+    // Linkowanie membershipów po emailu (dostosuj, jeśli używasz innych kluczy)
+    for (const r of rows) {
+      const sub = await prisma.subscriber.findUnique({ where: { email: r.email } })
       if (!sub) continue
 
       await prisma.subscriberGroup.upsert({
-        where: { subscriberId_groupId: { subscriberId: sub.id, groupId: localGroupId } },
-        create: { subscriberId: sub.id, groupId: localGroupId },
-        update: {}
+        where: {
+          subscriberId_groupId: { subscriberId: sub.id, groupId: localGroupId }
+        },
+        update: {},
+        create: { subscriberId: sub.id, groupId: localGroupId }
       })
       linked += 1
     }
 
     if (!next) break
+
     cursor = next
   }
 
