@@ -1,12 +1,10 @@
 // src/app/api/dev/import-subscribers/route.ts
 import { NextResponse } from 'next/server'
 
-import { MLListResponse, MLSubscriber } from '@/helpers/ml/types'
+import { fetchSubscribersPage } from '@/helpers/ml-subscribers/fetch-subscribers-page'
 import { prisma } from '@/server/db'
-import { ml } from '@/server/mailerLite'
 
 export async function POST() {
-  const limit = 100
   let cursor: string | undefined = undefined
   let imported = 0
   let inactivated = 0
@@ -14,20 +12,9 @@ export async function POST() {
   // Zestaw ID-ów ML widzianych w tym przebiegu
   const seenIds = new Set<string>()
 
-  // helper do pobrania strony: z cursor (jeśli jest) i limit
-  async function fetchPage(c?: string) {
-    const searchParams: Record<string, string | number> = { limit }
-    if (c) searchParams.cursor = c
-    const resp = await ml.get('subscribers', { searchParams }).json<MLListResponse<MLSubscriber>>()
-    const rows = Array.isArray(resp) ? resp : (resp.data ?? [])
-    const next = Array.isArray(resp) ? undefined : (resp.meta?.next_cursor ?? undefined)
-
-    return { rows, next }
-  }
-
   try {
     while (true) {
-      const { rows, next } = await fetchPage(cursor)
+      const { rows, next } = await fetchSubscribersPage(cursor)
 
       console.log({ imported: rows.length, next })
 
@@ -41,7 +28,6 @@ export async function POST() {
         await prisma.$transaction(
           async (tx) => {
             const name =
-              r.name ??
               (r.fields?.name as string | undefined) ??
               (r.fields?.first_name as string | undefined) ??
               null
@@ -99,7 +85,6 @@ export async function POST() {
     }
 
     // --- POST-SYNC: oznacz jako inactive tych, których NIE było w remote ---
-
     // 1) Pobierz lokalnych subów, którzy mają mailerLiteId (czyli pochodzą z ML)
     const localWithMlId = await prisma.subscriber.findMany({
       select: { id: true, mailerLiteId: true },
@@ -125,17 +110,15 @@ export async function POST() {
     }
 
     return NextResponse.json({ imported, inactivated })
-  } catch (e: any) {
+  } catch (e: unknown) {
     // lepsza diagnostyka z ciałem odpowiedzi
-    if (e.name === 'HTTPError' && e.response) {
-      const detail = await e.response
-        .clone()
-        .json()
-        .catch(() => null)
-      console.error('MailerLite error', e.response.status, detail ?? (await e.response.text()))
+    console.error('MailerLite SDK error', e)
 
-      return NextResponse.json({ error: 'MailerLite error', detail }, { status: e.response.status })
-    }
-    throw e
+    const message = e instanceof Error ? e.message : typeof e === 'string' ? e : 'Unknown error'
+
+    return NextResponse.json(
+      { error: 'MailerLite error', detail: message ?? 'Unknown error' },
+      { status: 500 }
+    )
   }
 }

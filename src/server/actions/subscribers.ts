@@ -4,7 +4,7 @@
 import { z } from 'zod'
 
 import { prisma } from '@/server/db'
-import { ml } from '@/server/mailerLite'
+import { ml } from '@/server/mailer-lite'
 
 import { MLSubscriberCreate } from './subscribers.types' // ⬅️ DODAJ
 

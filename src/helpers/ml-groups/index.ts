@@ -1,5 +1,4 @@
 export * from './fetch-groups-page'
-export * from './fetch-group-members-cursor'
 export * from './fetch-groups-page.types'
-export * from './fetch-group-members-cursor.types'
 export * from './import-group-members-by-cursor'
+export * from './import-group-members-by-cursor.types'
